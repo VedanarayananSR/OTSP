@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NHSCFA System — Simple Flow</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Figtree:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #F5F4F0;
+    font-family: 'Figtree', sans-serif;
+    color: #1A1A2E;
+    min-height: 100vh;
+    padding: 40px 24px 60px;
+  }
+
+  .page {
+    max-width: 960px;
+    margin: 0 auto;
+  }
+
+  /* Header */
+  .header {
+    margin-bottom: 48px;
+  }
+
+  .nhs-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #003087;
+    color: white;
+    padding: 6px 14px 6px 8px;
+    border-radius: 100px;
+    margin-bottom: 16px;
+  }
+
+  .nhs-pill .dot {
+    width: 22px; height: 22px;
+    background: white;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .nhs-pill .dot span {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-weight: 500;
+    color: #003087;
+  }
+
+  .nhs-pill .pill-text {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  h1 {
+    font-size: clamp(28px, 4vw, 44px);
+    font-weight: 800;
+    line-height: 1.1;
+    color: #1A1A2E;
+    letter-spacing: -0.03em;
+    margin-bottom: 10px;
+  }
+
+  h1 em {
+    font-style: normal;
+    color: #003087;
+  }
+
+  .subtitle {
+    font-size: 15px;
+    color: #6B7280;
+    font-weight: 400;
+    max-width: 520px;
+    line-height: 1.6;
+  }
+
+  /* Entry point */
+  .entry-block {
+    background: #003087;
+    color: white;
+    border-radius: 14px;
+    padding: 20px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    gap: 16px;
+  }
+
+  .entry-block .entry-left h3 {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  .entry-block .entry-left p {
+    font-size: 13px;
+    opacity: 0.75;
+    font-weight: 400;
+  }
+
+  .entry-channels {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .channel-tag {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.25);
+    color: white;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 4px 10px;
+    border-radius: 100px;
+  }
+
+  /* Down arrow connector */
+  .connector {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    margin: 4px 0;
+  }
+
+  .connector-line {
+    width: 2px;
+    height: 24px;
+    background: #D1D5DB;
+  }
+
+  .connector-arrow {
+    width: 0; height: 0;
+    border-left: 7px solid transparent;
+    border-right: 7px solid transparent;
+    border-top: 9px solid #D1D5DB;
+  }
+
+  .connector-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: #9CA3AF;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-top: 4px;
+  }
+
+  /* Triage block */
+  .triage-block {
+    background: white;
+    border: 2px solid #E5E7EB;
+    border-radius: 14px;
+    padding: 20px 28px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .triage-icon {
+    width: 44px; height: 44px;
+    background: #FEF3C7;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+
+  .triage-block h3 {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1A1A2E;
+    margin-bottom: 3px;
+  }
+
+  .triage-block p {
+    font-size: 12px;
+    color: #6B7280;
+    line-height: 1.5;
+  }
+
+  .priority-pills {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+  }
+
+  .p-pill {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 100px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .p-critical { background: #FEE2E2; color: #DC2626; }
+  .p-high { background: #FEF3C7; color: #D97706; }
+  .p-medium { background: #DBEAFE; color: #2563EB; }
+  .p-low { background: #D1FAE5; color: #059669; }
+
+  /* Split row */
+  .split-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  @media (max-width: 640px) {
+    .split-row { grid-template-columns: 1fr; }
+    .entry-block { flex-direction: column; align-items: flex-start; }
+  }
+
+  /* Case type cards */
+  .case-card {
+    background: white;
+    border: 2px solid #E5E7EB;
+    border-radius: 14px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s, transform 0.2s;
+    cursor: default;
+  }
+
+  .case-card:hover {
+    border-color: #003087;
+    transform: translateY(-2px);
+  }
+
+  .case-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+  }
+
+  .card-criminal::before { background: #DC2626; }
+  .card-poca::before { background: #7C3AED; }
+  .card-disciplinary::before { background: #D97706; }
+  .card-intel::before { background: #0EA5E9; }
+  .card-prevention::before { background: #059669; }
+  .card-prosecution::before { background: #DB2777; }
+
+  .case-card .card-icon {
+    font-size: 24px;
+    margin-bottom: 10px;
+  }
+
+  .case-card h3 {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1A1A2E;
+    margin-bottom: 6px;
+    line-height: 1.3;
+  }
+
+  .case-card p {
+    font-size: 12px;
+    color: #6B7280;
+    line-height: 1.6;
+  }
+
+  .case-card .card-steps {
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .step-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 11px;
+    color: #374151;
+  }
+
+  .step-num {
+    width: 18px; height: 18px;
+    background: #F3F4F6;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-weight: 600;
+    color: #6B7280;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  /* Three column grid */
+  .three-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  @media (max-width: 720px) {
+    .three-col { grid-template-columns: 1fr; }
+  }
+
+  /* Outcome block */
+  .outcome-block {
+    background: #1A1A2E;
+    color: white;
+    border-radius: 14px;
+    padding: 24px 28px;
+    margin-bottom: 12px;
+  }
+
+  .outcome-block h3 {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    opacity: 0.9;
+  }
+
+  .outcome-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 12px;
+  }
+
+  .outcome-item {
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    padding: 14px;
+  }
+
+  .outcome-item .o-icon { font-size: 20px; margin-bottom: 6px; }
+
+  .outcome-item .o-label {
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 3px;
+  }
+
+  .outcome-item .o-desc {
+    font-size: 11px;
+    opacity: 0.55;
+    line-height: 1.4;
+  }
+
+  /* Foundation block */
+  .foundation-block {
+    background: white;
+    border: 2px solid #E5E7EB;
+    border-radius: 14px;
+    padding: 24px 28px;
+    margin-bottom: 12px;
+  }
+
+  .foundation-block h3 {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1A1A2E;
+    margin-bottom: 16px;
+  }
+
+  .foundation-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 10px;
+  }
+
+  .foundation-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px;
+    background: #F9FAFB;
+    border-radius: 8px;
+    border: 1px solid #F3F4F6;
+  }
+
+  .foundation-item .f-icon {
+    font-size: 18px;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .foundation-item .f-text .f-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: #1A1A2E;
+    margin-bottom: 2px;
+  }
+
+  .foundation-item .f-text .f-desc {
+    font-size: 11px;
+    color: #9CA3AF;
+    line-height: 1.4;
+  }
+
+  /* Section label */
+  .section-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #9CA3AF;
+    margin-bottom: 10px;
+    padding-left: 4px;
+  }
+
+  /* Compliance strip */
+  .compliance-strip {
+    background: #EEF2FF;
+    border: 1px solid #C7D2FE;
+    border-radius: 14px;
+    padding: 18px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .compliance-strip .c-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #3730A3;
+    white-space: nowrap;
+  }
+
+  .law-tags {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .law-tag {
+    background: white;
+    border: 1px solid #C7D2FE;
+    color: #4338CA;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    padding: 4px 10px;
+    border-radius: 6px;
+  }
+
+  /* Wide card */
+  .wide-card {
+    grid-column: 1 / -1;
+  }
+
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="nhs-pill">
+      <div class="dot"><span>NHS</span></div>
+      <span class="pill-text">Counter Fraud Authority</span>
+    </div>
+    <h1>How the system <em>works</em></h1>
+    <p class="subtitle">A simple flow of what happens from the moment a fraud is reported to the moment a case is closed.</p>
+  </div>
+
+  <!-- Step 1: Entry -->
+  <div class="section-label">Step 1 — Someone reports a fraud</div>
+  <div class="entry-block">
+    <div class="entry-left">
+      <h3>Fraud Report Comes In</h3>
+      <p>Reports arrive from multiple channels. System creates a case record instantly.</p>
+    </div>
+    <div class="entry-channels">
+      <span class="channel-tag">📞 Hotline</span>
+      <span class="channel-tag">🌐 Online Portal</span>
+      <span class="channel-tag">👤 Staff Tip-Off</span>
+      <span class="channel-tag">⚙️ Automated Flag</span>
+      <span class="channel-tag">🔗 API Feed</span>
+    </div>
+  </div>
+
+  <div class="connector">
+    <div class="connector-line"></div>
+    <div class="connector-arrow"></div>
+  </div>
+
+  <!-- Step 2: Triage -->
+  <div class="section-label">Step 2 — Is it real? How serious?</div>
+  <div class="triage-block">
+    <div class="triage-icon">⚖️</div>
+    <div>
+      <h3>Triage & Risk Scoring</h3>
+      <p>An analyst reviews the report. Is it credible? Is it NHS fraud? How much money is at risk? The case gets a priority rating and is sent to the right investigator.</p>
+      <div class="priority-pills">
+        <span class="p-pill p-critical">Critical</span>
+        <span class="p-pill p-high">High</span>
+        <span class="p-pill p-medium">Medium</span>
+        <span class="p-pill p-low">Low</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="connector">
+    <div class="connector-line"></div>
+    <div class="connector-arrow"></div>
+    <div class="connector-label">Opens one of these case types</div>
+  </div>
+
+  <!-- Step 3: Case Types -->
+  <div class="section-label">Step 3 — The right case type is opened</div>
+  <div class="split-row">
+    <div class="case-card card-criminal">
+      <div class="card-icon">🔍</div>
+      <h3>Criminal Investigation</h3>
+      <p>Used when the fraud could lead to prosecution. Every action is legally traceable.</p>
+      <div class="card-steps">
+        <div class="step-item"><div class="step-num">1</div><span>Investigator assigned</span></div>
+        <div class="step-item"><div class="step-num">2</div><span>Evidence gathered from NHS systems</span></div>
+        <div class="step-item"><div class="step-num">3</div><span>Subject formally interviewed (PACE)</span></div>
+        <div class="step-item"><div class="step-num">4</div><span>Disclosure schedule maintained (CPIA)</span></div>
+        <div class="step-item"><div class="step-num">5</div><span>Decision: prosecute or not</span></div>
+      </div>
+    </div>
+
+    <div class="case-card card-disciplinary">
+      <div class="card-icon">📋</div>
+      <h3>Disciplinary Investigation</h3>
+      <p>Used when the outcome is employment action rather than criminal prosecution.</p>
+      <div class="card-steps">
+        <div class="step-item"><div class="step-num">1</div><span>Evidence gathered</span></div>
+        <div class="step-item"><div class="step-num">2</div><span>HR notified and engaged</span></div>
+        <div class="step-item"><div class="step-num">3</div><span>Disciplinary hearing managed</span></div>
+        <div class="step-item"><div class="step-num">4</div><span>Outcome: dismissal / warning</span></div>
+        <div class="step-item"><div class="step-num">5</div><span>NMC / GMC referral if clinical</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="three-col">
+    <div class="case-card card-poca">
+      <div class="card-icon">💰</div>
+      <h3>POCA Financial Investigation</h3>
+      <p>Chasing the money. Tracing stolen assets and getting them back.</p>
+      <div class="card-steps">
+        <div class="step-item"><div class="step-num">1</div><span>Assets identified</span></div>
+        <div class="step-item"><div class="step-num">2</div><span>Freeze orders placed</span></div>
+        <div class="step-item"><div class="step-num">3</div><span>Recovery proceedings</span></div>
+      </div>
+    </div>
+
+    <div class="case-card card-intel">
+      <div class="card-icon">🧩</div>
+      <h3>Intelligence Record</h3>
+      <p>Not yet a case — but worth keeping. Graded, sanitised, and shared carefully.</p>
+      <div class="card-steps">
+        <div class="step-item"><div class="step-num">1</div><span>Intelligence graded (3x5x2)</span></div>
+        <div class="step-item"><div class="step-num">2</div><span>Source protected</span></div>
+        <div class="step-item"><div class="step-num">3</div><span>Shared to right people only</span></div>
+      </div>
+    </div>
+
+    <div class="case-card card-prevention">
+      <div class="card-icon">🛡️</div>
+      <h3>Fraud Prevention & Risk</h3>
+      <p>Fixing the gaps before fraud happens. RAG-rated and financially tracked.</p>
+      <div class="card-steps">
+        <div class="step-item"><div class="step-num">1</div><span>Weakness identified</span></div>
+        <div class="step-item"><div class="step-num">2</div><span>RAG rating assigned</span></div>
+        <div class="step-item"><div class="step-num">3</div><span>Prevention impact measured</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="connector">
+    <div class="connector-line"></div>
+    <div class="connector-arrow"></div>
+    <div class="connector-label">Criminal cases also produce</div>
+  </div>
+
+  <!-- CPS Bundle -->
+  <div class="section-label">Step 4 — Going to court</div>
+  <div class="case-card card-prosecution" style="margin-bottom:12px;">
+    <div class="card-icon">⚖️</div>
+    <h3>CPS Prosecution Bundle</h3>
+    <p>When a case is ready for prosecution, the system generates the full bundle for the Crown Prosecution Service — every form, every exhibit, every witness, every piece of unused material listed and accounted for. Nothing missing. Nothing that could get the case thrown out.</p>
+    <div class="card-steps" style="flex-direction:row;flex-wrap:wrap;gap:8px;margin-top:12px;">
+      <div class="step-item"><div class="step-num">MG</div><span>MG Forms</span></div>
+      <div class="step-item"><div class="step-num">EX</div><span>Exhibits Schedule</span></div>
+      <div class="step-item"><div class="step-num">WI</div><span>Witnesses</span></div>
+      <div class="step-item"><div class="step-num">UM</div><span>Unused Material</span></div>
+    </div>
+  </div>
+
+  <div class="connector">
+    <div class="connector-line"></div>
+    <div class="connector-arrow"></div>
+  </div>
+
+  <!-- Outcomes -->
+  <div class="section-label">Step 5 — What happens at the end</div>
+  <div class="outcome-block">
+    <h3>Possible Outcomes — All Recorded in the System</h3>
+    <div class="outcome-grid">
+      <div class="outcome-item">
+        <div class="o-icon">🏛️</div>
+        <div class="o-label">Prosecution</div>
+        <div class="o-desc">Referred to CPS. Court dates tracked.</div>
+      </div>
+      <div class="outcome-item">
+        <div class="o-icon">🚪</div>
+        <div class="o-label">Dismissal</div>
+        <div class="o-desc">Employee dismissed via HR process.</div>
+      </div>
+      <div class="outcome-item">
+        <div class="o-icon">💷</div>
+        <div class="o-label">Recovery</div>
+        <div class="o-desc">Stolen money clawed back.</div>
+      </div>
+      <div class="outcome-item">
+        <div class="o-icon">🛑</div>
+        <div class="o-label">Prevention</div>
+        <div class="o-desc">System weakness fixed. Loss avoided.</div>
+      </div>
+      <div class="outcome-item">
+        <div class="o-icon">📢</div>
+        <div class="o-label">Regulatory Alert</div>
+        <div class="o-desc">NMC / GMC notified about a clinician.</div>
+      </div>
+      <div class="outcome-item">
+        <div class="o-icon">❌</div>
+        <div class="o-label">No Further Action</div>
+        <div class="o-desc">Unsubstantiated. Closed with reason.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="connector">
+    <div class="connector-line"></div>
+    <div class="connector-arrow"></div>
+  </div>
+
+  <!-- Foundation -->
+  <div class="section-label">Running underneath everything</div>
+  <div class="foundation-block">
+    <h3>What powers the whole system</h3>
+    <div class="foundation-grid">
+      <div class="foundation-item">
+        <div class="f-icon">🔒</div>
+        <div class="f-text">
+          <div class="f-title">Role-Based Access</div>
+          <div class="f-desc">Investigators see only their cases. Managers see everything.</div>
+        </div>
+      </div>
+      <div class="foundation-item">
+        <div class="f-icon">📝</div>
+        <div class="f-text">
+          <div class="f-title">Full Audit Trail</div>
+          <div class="f-desc">Every action logged. Tamper-evident. Court-ready.</div>
+        </div>
+      </div>
+      <div class="foundation-item">
+        <div class="f-icon">⏱️</div>
+        <div class="f-text">
+          <div class="f-title">SLA Tracking</div>
+          <div class="f-desc">Deadlines auto-monitored. Breaches escalate instantly.</div>
+        </div>
+      </div>
+      <div class="foundation-item">
+        <div class="f-icon">🔗</div>
+        <div class="f-text">
+          <div class="f-title">System Integrations</div>
+          <div class="f-desc">Pulls data from ESR, Finance, PAS, PPA automatically.</div>
+        </div>
+      </div>
+      <div class="foundation-item">
+        <div class="f-icon">📊</div>
+        <div class="f-text">
+          <div class="f-title">Dashboards & Reports</div>
+          <div class="f-desc">Live workload, financial outcomes, SLA compliance.</div>
+        </div>
+      </div>
+      <div class="foundation-item">
+        <div class="f-icon">☁️</div>
+        <div class="f-text">
+          <div class="f-title">UK Cloud Hosted</div>
+          <div class="f-desc">NHS data stays in the UK. 99.9% uptime. No installs.</div>
+        </div>
+      </div>
+      <div class="foundation-item">
+        <div class="f-icon">🔐</div>
+        <div class="f-text">
+          <div class="f-title">MFA & SSO</div>
+          <div class="f-desc">Azure AD sign-on. Multi-factor auth for all users.</div>
+        </div>
+      </div>
+      <div class="foundation-item">
+        <div class="f-icon">📄</div>
+        <div class="f-text">
+          <div class="f-title">Document Management</div>
+          <div class="f-desc">OCR search, redaction, retention, bulk operations.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Compliance -->
+  <div class="compliance-strip">
+    <div class="c-title">⚖️ Legal Compliance</div>
+    <div class="law-tags">
+      <span class="law-tag">CPIA 1996</span>
+      <span class="law-tag">PACE 1984</span>
+      <span class="law-tag">POCA 2002</span>
+      <span class="law-tag">Fraud Act 2006</span>
+      <span class="law-tag">Bribery Act 2010</span>
+      <span class="law-tag">UK GDPR</span>
+      <span class="law-tag">NCSC Cloud Principles</span>
+      <span class="law-tag">Official-Sensitive</span>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
