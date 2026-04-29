@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CFCMP — Process Flow</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
+
+  :root {
+    --bg: #0D1117;
+    --bg2: #161B22;
+    --bg3: #1C2333;
+    --border: rgba(48,54,61,0.8);
+    --blue: #0072CE;
+    --blue-dark: #003087;
+    --blue-light: #41B6E6;
+    --green: #2EA043;
+    --green-light: #3FB950;
+    --amber: #D29922;
+    --amber-light: #E3B341;
+    --red: #DA3633;
+    --purple: #8957E5;
+    --text: #E6EDF3;
+    --muted: #7D8590;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    padding: 40px 24px 80px;
+    min-height: 100vh;
+  }
+
+  /* Background dot grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: radial-gradient(circle, rgba(0,114,206,0.12) 1px, transparent 1px);
+    background-size: 32px 32px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrap {
+    max-width: 1100px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Header */
+  .page-header {
+    margin-bottom: 48px;
+  }
+
+  .product-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid rgba(0,114,206,0.4);
+    background: rgba(0,114,206,0.08);
+    padding: 5px 12px;
+    border-radius: 4px;
+    margin-bottom: 14px;
+  }
+
+  .product-tag span {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--blue-light);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .product-tag .dot {
+    width: 6px; height: 6px;
+    background: var(--green-light);
+    border-radius: 50%;
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+  }
+
+  h1 {
+    font-size: clamp(24px, 3.5vw, 40px);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: white;
+    line-height: 1.1;
+  }
+
+  h1 span { color: var(--blue-light); }
+
+  .page-sub {
+    margin-top: 8px;
+    font-size: 14px;
+    color: var(--muted);
+    font-weight: 300;
+  }
+
+  /* Legend */
+  .legend {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    padding: 12px 16px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    margin-bottom: 36px;
+  }
+
+  .leg-item {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 11px;
+    color: var(--muted);
+    font-family: var(--mono);
+  }
+
+  .leg-dot {
+    width: 10px; height: 10px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  /* Flow container */
+  .flow {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  /* Phase block */
+  .phase-block {
+    display: grid;
+    grid-template-columns: 180px 1fr;
+    gap: 0;
+    margin-bottom: 4px;
+  }
+
+  .phase-label {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 16px 16px 16px 0;
+    border-right: 2px solid var(--border);
+    margin-right: 20px;
+    min-width: 160px;
+  }
+
+  .phase-num {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 4px;
+  }
+
+  .phase-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: white;
+    margin-bottom: 4px;
+  }
+
+  .phase-sla {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 3px;
+    display: inline-block;
+    width: fit-content;
+  }
+
+  .sla-normal { background: rgba(210,153,34,0.15); color: var(--amber-light); border: 1px solid rgba(210,153,34,0.3); }
+  .sla-fast { background: rgba(46,160,67,0.15); color: var(--green-light); border: 1px solid rgba(46,160,67,0.3); }
+  .sla-long { background: rgba(218,54,51,0.15); color: #FF7B72; border: 1px solid rgba(218,54,51,0.3); }
+
+  /* Phase content */
+  .phase-content {
+    padding: 16px 0;
+  }
+
+  /* Node row */
+  .node-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+  }
+
+  /* Nodes */
+  .node {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    min-width: 100px;
+    max-width: 140px;
+  }
+
+  .node-box {
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 5px;
+    font-size: 11px;
+    font-weight: 500;
+    text-align: center;
+    line-height: 1.4;
+    border: 1px solid;
+    cursor: default;
+    transition: transform 0.15s, filter 0.15s;
+  }
+
+  .node-box:hover { transform: translateY(-2px); filter: brightness(1.15); }
+
+  .node-trigger { background: rgba(0,48,135,0.4); border-color: rgba(0,114,206,0.6); color: #79B8FF; }
+  .node-system { background: rgba(46,160,67,0.15); border-color: rgba(46,160,67,0.5); color: #56D364; }
+  .node-decision { background: rgba(210,153,34,0.15); border-color: rgba(210,153,34,0.5); color: var(--amber-light); }
+  .node-action { background: rgba(137,87,229,0.15); border-color: rgba(137,87,229,0.4); color: #C9B1FF; }
+  .node-alert { background: rgba(218,54,51,0.15); border-color: rgba(218,54,51,0.4); color: #FF7B72; }
+  .node-end { background: rgba(46,160,67,0.2); border-color: rgba(46,160,67,0.6); color: #56D364; border-radius: 14px; }
+  .node-optional { background: rgba(65,182,230,0.1); border-color: rgba(65,182,230,0.3); color: var(--blue-light); border-style: dashed; }
+
+  .node-owner {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--muted);
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  /* Arrow */
+  .arr {
+    color: var(--muted);
+    font-size: 16px;
+    align-self: center;
+    flex-shrink: 0;
+    padding-top: 2px;
+  }
+
+  /* Phase divider connector */
+  .phase-connector {
+    display: grid;
+    grid-template-columns: 180px 1fr;
+    gap: 0;
+    margin-bottom: 4px;
+  }
+
+  .pc-left { border-right: 2px solid var(--border); margin-right: 20px; }
+  .pc-right {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 0;
+  }
+
+  .pc-line {
+    width: 2px;
+    height: 28px;
+    background: var(--border);
+    margin-left: 20px;
+  }
+
+  .pc-arrow-down {
+    width: 0; height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 8px solid var(--border);
+    margin-left: 17px;
+  }
+
+  .pc-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-left: 10px;
+  }
+
+  /* Trigger sources */
+  .trigger-section {
+    margin-bottom: 32px;
+  }
+
+  .trigger-section h2 {
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+
+  .trigger-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .trigger-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 160px;
+  }
+
+  .trigger-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+
+  .trigger-card .tc-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: white;
+    margin-bottom: 2px;
+  }
+
+  .trigger-card .tc-desc {
+    font-size: 10px;
+    color: var(--muted);
+  }
+
+  /* Branch section */
+  .branch-section {
+    margin-bottom: 8px;
+  }
+
+  .branch-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+  }
+
+  .branch-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 10px;
+  }
+
+  .branch-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+    border-top: 3px solid transparent;
+    transition: border-top-color 0.2s;
+  }
+
+  .branch-card:hover { border-top-color: var(--blue); }
+
+  .bc-criminal { border-top-color: #FF7B72; }
+  .bc-financial { border-top-color: var(--purple); }
+  .bc-disciplinary { border-top-color: var(--amber-light); }
+  .bc-intelligence { border-top-color: var(--blue-light); }
+  .bc-prevention { border-top-color: var(--green-light); }
+
+  .bc-ref {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 4px;
+  }
+
+  .bc-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: white;
+    margin-bottom: 6px;
+  }
+
+  .bc-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .bc-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    font-size: 10px;
+    color: var(--muted);
+  }
+
+  .bc-step-num {
+    font-family: var(--mono);
+    font-size: 9px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 1px 4px;
+    flex-shrink: 0;
+    color: rgba(125,133,144,0.8);
+  }
+
+  /* Outcome section */
+  .outcomes-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+
+  .outcome-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 12px;
+    border-radius: 5px;
+    font-size: 11px;
+    font-weight: 500;
+    border: 1px solid;
+  }
+
+  .oc-prosecution { background: rgba(218,54,51,0.12); border-color: rgba(218,54,51,0.35); color: #FF7B72; }
+  .oc-dismissal { background: rgba(210,153,34,0.12); border-color: rgba(210,153,34,0.35); color: var(--amber-light); }
+  .oc-recovery { background: rgba(46,160,67,0.12); border-color: rgba(46,160,67,0.35); color: var(--green-light); }
+  .oc-prevention { background: rgba(0,114,206,0.12); border-color: rgba(0,114,206,0.35); color: var(--blue-light); }
+  .oc-nfa { background: rgba(125,133,144,0.12); border-color: rgba(125,133,144,0.3); color: var(--muted); }
+  .oc-regulatory { background: rgba(137,87,229,0.12); border-color: rgba(137,87,229,0.35); color: #C9B1FF; }
+
+  /* Foundation strip */
+  .foundation {
+    margin-top: 32px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px 24px;
+  }
+
+  .foundation h3 {
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+
+  .foundation-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 8px;
+  }
+
+  .f-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 12px;
+    background: var(--bg3);
+    border-radius: 5px;
+    border: 1px solid var(--border);
+    font-size: 11px;
+    color: rgba(230,237,243,0.7);
+  }
+
+  .f-item .f-icon { font-size: 14px; flex-shrink: 0; }
+
+  /* Section label inside flow */
+  .flow-section-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: rgba(65,182,230,0.7);
+    margin-bottom: 10px;
+    padding-left: 2px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .flow-section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* Connector arrow between major sections */
+  .big-connector {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
+    margin: 12px 0 12px 89px;
+  }
+
+  .big-arrow-line {
+    width: 2px;
+    height: 32px;
+    background: linear-gradient(to bottom, var(--border), rgba(0,114,206,0.5));
+  }
+
+  .big-arrow-head {
+    width: 0; height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-top: 10px solid rgba(0,114,206,0.5);
+    margin-left: -3px;
+  }
+
+  .big-connector-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-left: 10px;
+    margin-top: -22px;
+  }
+
+  .optional-badge {
+    font-family: var(--mono);
+    font-size: 9px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    background: rgba(65,182,230,0.1);
+    color: var(--blue-light);
+    border: 1px solid rgba(65,182,230,0.2);
+    margin-left: 8px;
+  }
+
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- Header -->
+  <div class="page-header">
+    <div class="product-tag">
+      <div class="dot"></div>
+      <span>CFCMP · Counter Fraud Case Management Platform</span>
+    </div>
+    <h1>Process <span>Flow</span></h1>
+    <p class="page-sub">End-to-end case lifecycle · All case types · Trigger points, decisions, and system initiations</p>
+  </div>
+
+  <!-- Legend -->
+  <div class="legend">
+    <div class="leg-item"><div class="leg-dot" style="background:#79B8FF;"></div>Trigger / Intake</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#56D364;"></div>System Action</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#E3B341;"></div>Decision Gate</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#C9B1FF;"></div>Investigator Action</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#FF7B72;"></div>Alert / Escalation</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#41B6E6; border: 1px dashed #41B6E6;"></div>Optional / Conditional</div>
+  </div>
+
+  <!-- ─── TRIGGER SOURCES ─────────────────────────────── -->
+  <div class="flow-section-title">Entry Points — How fraud reports arrive</div>
+  <div class="trigger-section">
+    <div class="trigger-row">
+      <div class="trigger-card">
+        <div class="trigger-icon">🌐</div>
+        <div><div class="tc-name">Online Portal</div><div class="tc-desc">Public or internal web submission</div></div>
+      </div>
+      <div class="trigger-card">
+        <div class="trigger-icon">📞</div>
+        <div><div class="tc-name">Hotline / IVR</div><div class="tc-desc">Telephony intake, anonymous option</div></div>
+      </div>
+      <div class="trigger-card">
+        <div class="trigger-icon">⚙️</div>
+        <div><div class="tc-name">Automated Flag</div><div class="tc-desc">Payroll, billing, or system anomaly</div></div>
+      </div>
+      <div class="trigger-card">
+        <div class="trigger-icon">🔗</div>
+        <div><div class="tc-name">API Feed</div><div class="tc-desc">Third-party or cross-agency referral</div></div>
+      </div>
+      <div class="trigger-card">
+        <div class="trigger-icon">👤</div>
+        <div><div class="tc-name">Staff / LCFS</div><div class="tc-desc">Internal direct referral</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="big-connector">
+    <div class="big-arrow-line"></div>
+    <div class="big-arrow-head"></div>
+    <div class="big-connector-label">All channels normalised into single case record</div>
+  </div>
+
+  <!-- ─── PHASE 1: INTAKE ─────────────────────────────── -->
+  <div class="flow-section-title">Phase 1 — Intake <span style="color:var(--green-light);font-weight:600;">SLA: 2 hrs</span></div>
+  <div style="margin-bottom: 16px;">
+    <div class="node-row">
+      <div class="node">
+        <div class="node-box node-trigger">Report Received</div>
+        <div class="node-owner">System</div>
+      </div>
+      <span class="arr">→</span>
+      <div class="node">
+        <div class="node-box node-system">Case Record Created</div>
+        <div class="node-owner">PEGA Auto</div>
+      </div>
+      <span class="arr">→</span>
+      <div class="node">
+        <div class="node-box node-system">Reference No. Issued</div>
+        <div class="node-owner">PEGA Auto</div>
+      </div>
+      <span class="arr">→</span>
+      <div class="node">
+        <div class="node-box node-system">Duplicate Check Run</div>
+        <div class="node-owner">PEGA Auto</div>
+      </div>
+      <span class="arr">→</span>
+      <div class="node">
+        <div class="node-box node-decision">Duplicate Found?</div>
+        <div class="node-owner">System</div>
+      </div>
+      <span class="arr">→</span>
+      <div class="node">
+        <div class="node-box node-system">Link & Flag or Proceed</div>
+        <div class="node-owner">PEGA Auto</div>
+      </div>
+      <span class="arr">→</span>
+      <div class="node">
+        <div class="node-box node-system">Referrer Acknowledged</div>
+        <div class="node-owner">Email / SMS</div>
+      </div>
+      <span class="arr">→</span>
+      <div class="node">
+        <div class="node-box node-system">Enters Triage Queue</div>
+        <div class="node-owner">PEGA</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="big-connector">
+    <div class="big-arrow-line"></div>
+    <div class="big-arrow-head"></div>
+  </div>
+
+  <!-- ─── PHASE 2: TRIAGE ─────────────────────────────── -->
+  <div class="flow-section-title">Phase 2 — Triage & Assessment <span style="color:var(--amber-light);font-weight:600;">SLA: 24 hrs</span></div>
+  <div style="margin-bottom: 16px;">
+    <div class="node-row">
+      <div class="node">
+        <div class="node-box node-action">Analyst Reviews Report</div>
+        <div class="node-owner">Triage Analyst</div>
+      </div>
+      <span class="arr">→</span>
+      <div class="node">
+        <div class="node-box node-decision">Credible & In Scope?</div>
+        <div class="node-owner">Analyst</div>
+      </div>
+      <span class="arr">→</span>
+      <div class="node">
+        <div class="node-box node-system">Risk Score Calculated</div>
+        <div class="node-owner">PEGA Engine</div>
+      </div>
+      <span class="arr">→</span>
+      <div class="node">
+        <div class="node-box node-decision">Priority Assigned</div>
+        <div class="node-owner">Critical/High/Med/Low</div>
+      </div>
+      <span class="arr">→</span>
+      <div class="node">
+        <div class="node-box node-decision">Case Type Selected</div>
+        <div class="node-owner">Analyst</div>
+      </div>
+      <span class="arr">→</span>
+      <div class="node">
+        <div class="node-box node-system">Routed to Investigator</div>
+        <div class="node-owner">PEGA Routing</div>
+      </div>
+      <span class="arr">→</span>
+      <div class="node">
+        <div class="node-box node-alert">Critical? Auto-Escalate</div>
+        <div class="node-owner">Senior Inv. — 4 hrs</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="big-connector">
+    <div class="big-arrow-line"></div>
+    <div class="big-arrow-head"></div>
+    <div class="big-connector-label">Triage opens one of the following case types</div>
+  </div>
+
+  <!-- ─── CASE TYPES BRANCH ─────────────────────────────── -->
+  <div class="flow-section-title">Phase 3 — Case Type Branching</div>
+  <div style="margin-bottom: 20px;">
+    <div class="branch-grid">
+
+      <div class="branch-card bc-criminal">
+        <div class="bc-ref">CT-02</div>
+        <div class="bc-name">Criminal Investigation</div>
+        <div class="bc-steps">
+          <div class="bc-step"><span class="bc-step-num">1</span>Investigator assigned, plan created</div>
+          <div class="bc-step"><span class="bc-step-num">2</span>Evidence gathered from source systems</div>
+          <div class="bc-step"><span class="bc-step-num">3</span>Subject interviewed (PACE-compliant)</div>
+          <div class="bc-step"><span class="bc-step-num">4</span>Disclosure schedule maintained (CPIA)</div>
+          <div class="bc-step"><span class="bc-step-num">5</span>Financial loss quantified</div>
+          <div class="bc-step"><span class="bc-step-num">6</span>Decision: substantiate or close</div>
+        </div>
+      </div>
+
+      <div class="branch-card bc-financial">
+        <div class="bc-ref">CT-03 · Optional</div>
+        <div class="bc-name">Financial Investigation</div>
+        <div class="bc-steps">
+          <div class="bc-step"><span class="bc-step-num">1</span>Assets identified and traced</div>
+          <div class="bc-step"><span class="bc-step-num">2</span>Restraint or freezing orders sought</div>
+          <div class="bc-step"><span class="bc-step-num">3</span>Civil or criminal recovery route confirmed</div>
+          <div class="bc-step"><span class="bc-step-num">4</span>Proceedings commenced</div>
+          <div class="bc-step"><span class="bc-step-num">5</span>Recovery amount logged</div>
+        </div>
+      </div>
+
+      <div class="branch-card bc-disciplinary">
+        <div class="bc-ref">CT-04</div>
+        <div class="bc-name">Disciplinary Investigation</div>
+        <div class="bc-steps">
+          <div class="bc-step"><span class="bc-step-num">1</span>Evidence gathered</div>
+          <div class="bc-step"><span class="bc-step-num">2</span>HR / People team notified</div>
+          <div class="bc-step"><span class="bc-step-num">3</span>Disciplinary hearing managed</div>
+          <div class="bc-step"><span class="bc-step-num">4</span>Outcome: dismissal / warning</div>
+          <div class="bc-step"><span class="bc-step-num">5</span>Regulatory body referral if applicable</div>
+        </div>
+      </div>
+
+      <div class="branch-card bc-intelligence">
+        <div class="bc-ref">CT-05</div>
+        <div class="bc-name">Intelligence Record</div>
+        <div class="bc-steps">
+          <div class="bc-step"><span class="bc-step-num">1</span>Intelligence received and recorded</div>
+          <div class="bc-step"><span class="bc-step-num">2</span>Graded using 3x5x2 model</div>
+          <div class="bc-step"><span class="bc-step-num">3</span>Sanitised — source protected</div>
+          <div class="bc-step"><span class="bc-step-num">4</span>Dissemination approved and logged</div>
+          <div class="bc-step"><span class="bc-step-num">5</span>Linked to case or subject if applicable</div>
+        </div>
+      </div>
+
+      <div class="branch-card bc-prevention">
+        <div class="bc-ref">CT-06</div>
+        <div class="bc-name">Fraud Prevention & Risk</div>
+        <div class="bc-steps">
+          <div class="bc-step"><span class="bc-step-num">1</span>Control weakness identified</div>
+          <div class="bc-step"><span class="bc-step-num">2</span>RAG rating assigned</div>
+          <div class="bc-step"><span class="bc-step-num">3</span>Prevention action recommended</div>
+          <div class="bc-step"><span class="bc-step-num">4</span>Outcome and financial impact recorded</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="big-connector">
+    <div class="big-arrow-line"></div>
+    <div class="big-arrow-head"></div>
+    <div class="big-connector-label">Criminal cases proceed to decision gate</div>
+  </div>
+
+  <!-- ─── PHASE 5: DECISION ─────────────────────────────── -->
+  <div class="flow-section-title">Phase 5 — Decision Gate <span style="color:var(--amber-light);font-weight:600;">SLA: 5 working days</span></div>
+  <div style="margin-bottom: 16px;">
+    <div class="node-row">
+      <div class="node">
+        <div class="node-box node-action">Evidence Reviewed</div>
+        <div class="node-owner">Senior Inv.</div>
+      </div>
+      <span class="arr">→</span>
+      <div class="node">
+        <div class="node-box node-decision">Standard of Proof Met?</div>
+        <div class="node-owner">Senior Inv.</div>
+      </div>
+      <span class="arr">→</span>
+      <div class="node">
+        <div class="node-box node-decision">Substantiated?</div>
+        <div class="node-owner">Manager Approval</div>
+      </div>
+      <span class="arr">→</span>
+      <div class="node">
+        <div class="node-box node-decision">Criminal or Disciplinary?</div>
+        <div class="node-owner">Legal / Manager</div>
+      </div>
+      <span class="arr">→</span>
+      <div class="node">
+        <div class="node-box node-system">Decision Signed Off</div>
+        <div class="node-owner">Audit Trail Locked</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="big-connector">
+    <div class="big-arrow-line"></div>
+    <div class="big-arrow-head"></div>
+    <div class="big-connector-label">Criminal route → Prosecution bundle</div>
+  </div>
+
+  <!-- ─── PHASE 6: BUNDLE ─────────────────────────────── -->
+  <div class="flow-section-title">Phase 6 — Prosecution Bundle <span class="optional-badge">Conditional</span> <span style="color:var(--amber-light);font-weight:600;">SLA: 14 days</span></div>
+  <div style="margin-bottom: 16px;">
+    <div class="node-row">
+      <div class="node">
+        <div class="node-box node-optional">MG Forms Compiled</div>
+        <div class="node-owner">Investigator</div>
+      </div>
+      <span class="arr">→</span>
+      <div class="node">
+        <div class="node-box node-optional">Exhibit Schedule</div>
+        <div class="node-owner">Investigator</div>
+      </div>
+      <span class="arr">→</span>
+      <div class="node">
+        <div class="node-box node-optional">Witness Schedule</div>
+        <div class="node-owner">Investigator</div>
+      </div>
+      <span class="arr">→</span>
+      <div class="node">
+        <div class="node-box node-optional">Unused Material Listed</div>
+        <div class="node-owner">Disclosure Officer</div>
+      </div>
+      <span class="arr">→</span>
+      <div class="node">
+        <div class="node-box node-action">Bundle Reviewed</div>
+        <div class="node-owner">Legal</div>
+      </div>
+      <span class="arr">→</span>
+      <div class="node">
+        <div class="node-box node-system">Submitted to Authority</div>
+        <div class="node-owner">Tracked in PEGA</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="big-connector">
+    <div class="big-arrow-line"></div>
+    <div class="big-arrow-head"></div>
+  </div>
+
+  <!-- ─── PHASE 7: SANCTION & RECOVERY ──────────────────── -->
+  <div class="flow-section-title">Phase 7 — Sanction & Recovery <span style="color:var(--muted);font-weight:500;">Timeline varies</span></div>
+  <div style="margin-bottom: 16px;">
+    <div class="node-row">
+      <div class="node">
+        <div class="node-box node-alert">Prosecution Tracked</div>
+        <div class="node-owner">Legal / Police</div>
+      </div>
+      <span class="arr">→</span>
+      <div class="node">
+        <div class="node-box node-action">Disciplinary Outcome</div>
+        <div class="node-owner">HR / People</div>
+      </div>
+      <span class="arr">→</span>
+      <div class="node">
+        <div class="node-box node-system">Recovery Actioned</div>
+        <div class="node-owner">Finance</div>
+      </div>
+      <span class="arr">→</span>
+      <div class="node">
+        <div class="node-box node-system">Recovery Amount Logged</div>
+        <div class="node-owner">PEGA</div>
+      </div>
+      <span class="arr">→</span>
+      <div class="node">
+        <div class="node-box node-decision">All Actions Complete?</div>
+        <div class="node-owner">Manager</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="big-connector">
+    <div class="big-arrow-line"></div>
+    <div class="big-arrow-head"></div>
+  </div>
+
+  <!-- ─── PHASE 8: CLOSURE ─────────────────────────────── -->
+  <div class="flow-section-title">Phase 8 — Closure & Intelligence Feedback <span style="color:var(--green-light);font-weight:600;">SLA: 48 hrs</span></div>
+  <div style="margin-bottom: 20px;">
+    <div class="node-row">
+      <div class="node">
+        <div class="node-box node-action">Case Formally Closed</div>
+        <div class="node-owner">Investigator</div>
+      </div>
+      <span class="arr">→</span>
+      <div class="node">
+        <div class="node-box node-system">Outcomes Recorded</div>
+        <div class="node-owner">PEGA</div>
+      </div>
+      <span class="arr">→</span>
+      <div class="node">
+        <div class="node-box node-system">Intelligence Fed Back</div>
+        <div class="node-owner">Intel Repository</div>
+      </div>
+      <span class="arr">→</span>
+      <div class="node">
+        <div class="node-box node-action">Lessons Learned</div>
+        <div class="node-owner">Investigator</div>
+      </div>
+      <span class="arr">→</span>
+      <div class="node">
+        <div class="node-box node-system">Reporting Updated</div>
+        <div class="node-owner">Dashboards</div>
+      </div>
+      <span class="arr">→</span>
+      <div class="node">
+        <div class="node-box node-end">Case Archived</div>
+        <div class="node-owner">PEGA</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── OUTCOMES ─────────────────────────────── -->
+  <div class="flow-section-title">Possible Case Outcomes</div>
+  <div class="outcomes-row" style="margin-bottom: 28px;">
+    <div class="outcome-chip oc-prosecution">🏛️ Criminal Prosecution</div>
+    <div class="outcome-chip oc-dismissal">🚪 Dismissal / Disciplinary</div>
+    <div class="outcome-chip oc-recovery">💷 Financial Recovery</div>
+    <div class="outcome-chip oc-prevention">🛡️ Prevention Action</div>
+    <div class="outcome-chip oc-regulatory">📢 Regulatory Referral</div>
+    <div class="outcome-chip oc-nfa">❌ No Further Action</div>
+  </div>
+
+  <!-- ─── FOUNDATION ─────────────────────────────── -->
+  <div class="foundation">
+    <h3>Running underneath every phase — Platform Capabilities</h3>
+    <div class="foundation-grid">
+      <div class="f-item"><span class="f-icon">📝</span>Tamper-evident audit trail on all actions</div>
+      <div class="f-item"><span class="f-icon">⏱️</span>SLA timers on every phase — auto-escalate on breach</div>
+      <div class="f-item"><span class="f-icon">🔒</span>Role-based & record-level access control</div>
+      <div class="f-item"><span class="f-icon">🔗</span>Live integration with client source systems</div>
+      <div class="f-item"><span class="f-icon">📊</span>Real-time dashboards and performance reporting</div>
+      <div class="f-item"><span class="f-icon">📄</span>OCR document search, redaction, retention</div>
+      <div class="f-item"><span class="f-icon">🔐</span>MFA + SSO via Azure AD / SAML / OAuth</div>
+      <div class="f-item"><span class="f-icon">⚙️</span>Dynamic config — new fraud types without code change</div>
+      <div class="f-item"><span class="f-icon">☁️</span>UK / client-region cloud hosted · 99.9% uptime</div>
+      <div class="f-item"><span class="f-icon">📤</span>Export to Word, Excel, PDF · Power BI API</div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
